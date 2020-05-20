@@ -1,16 +1,16 @@
-########################################################逻辑回归建申请评分卡######################################################
+########################################################Logistic regression application scorecard######################################################
 rm(list = ls())
 path <- "F:/Rworking/scoreCard";setwd(path);rm(path)
-#需要加载的包和R文件
-library(RODBC);library(Hmisc);library(devtools); library(woe) ;library(rattle) #第2个包label()用,第3、4是计算iv、woe和woe转化用,第5个binning用
-library(foreach);library(doParallel);library(iterators);library(rpart);library(caret)  #前3个并行计算用， 后面一个是用来拆分数据集的
-library(plyr);library(party);library(ROCR);library(car) #party包可以处理缺失值，随机森林用此包；ROCR用于模型评价,car共线性VIF
+#load r packages
+library(RODBC);library(Hmisc);library(devtools); library(woe) ;library(rattle) #second one for labeling; third and fourth for calculating IV,WOE and WOE transformation; fifth for binning
+library(foreach);library(doParallel);library(iterators);library(rpart);library(caret)  #first three for parelleling calculating， following one for splitting
+library(plyr);library(party);library(ROCR);library(car) #party package for missing value，random forrest；ROCR for model evaluation ; car for colinearity VIF
 library(gbm) ;library(data.table);library(plyr);library(dplyr) ;library(ggplot2);library(ggthemes); library(plotly) ;library(plotmo) ;library(dismo);library(glmnet)
-source("tools.R",encoding="utf-8")   #需要的文件
+source("tools.R",encoding="utf-8")   #needed tools
 
-###################################################### 一、数据准备和分析  #######################################################
+###################################################### I. Data preparation and analysis  #######################################################
 
-##### 1、获取数据
+##### 1、Loading data
 credit1_1<-read.csv("DataJSD/jsd0418_1.csv",stringsAsFactors = TRUE)
 credit1_2<-read.csv("DataJSD/jsd0418_2.csv",stringsAsFactors = TRUE)
 
@@ -110,7 +110,7 @@ explainMissFeatureVar<-c(c("缺失值占比大于0.9",length(names.remove.miss),
 #if(length(names(credit)[names(credit) %in% names.remove.categ])>0){credit<-credit[-which(names(credit) %in% names.remove.categ)]}
 #explainCategFeatureVar<-c(c("单一类别占比大于0.9",length(names.remove.categ),length(credit)-1,paste(names.remove.miss,collapse = " | ")))
 
-######################################################################二、变量筛选######################################################
+######################################################################II. Variable selection######################################################
 
 # 初步筛选4：通过IV，随机森林和GBDT筛选变量
 # 初步查看IV值
@@ -324,7 +324,7 @@ statistFeatureVar <- as.data.frame(rbind(explainTotalFeatureVar,explainMissFeatu
 names(statistFeatureVar)<-c("变量排除条件","排除特征变量数","剩余特征变量数","排除的变量")
 write.csv(statistFeatureVar,file = "DataOutputJSD/statistFeatureVar.csv",row.names = FALSE) 
 
-#####################################################三、变量变换###################################################
+#####################################################III. Variable transformation ###################################################
 
 
 # 这次样本量较少，不进行拆分。数据集拆分（分层随机抽样）拆分训练集和测试集
@@ -1362,7 +1362,7 @@ kappa(cor.value.woe.cb, exact=TRUE)
 modeltemp = glm(target ~ . ,data=credit.train.woe, family=binomial)
 vif(modeltemp)
 
-###################################################### 四、模型开发  #############################################################
+###################################################### IV. Model Development  #############################################################
 #"call_in_len_avg_bin_woe",
 #模型1  d180_call_contacts_count_bin_woe "xd_call_cnt_3m_bin_woe","d30_call_total_times_bin_woe","d30_call_total_time_bin_woe",
 name.model.remove1=c("ph_talk_obj_per_0_6_bin_woe","xd_call_out_len_ave_d_bin_woe","call_time_std_mth5_bin_woe","avg_call_in_len_bin_woe","d150_d3_nocall_times_bin_woe","call_len_avg_bin_woe","xd_call_in_cnt_bin_woe","d180_max_nocall_days_bin_woe","xd_mobile_out_cnt_ave_d_bin_woe","xd_mobile_out_cnt_pct_bin_woe","contact_1w_avg_bin_woe","d180_call_contacts_count_bin_woe","contact1_mobile_notin_m6_call_re_bin_woe",
@@ -1401,7 +1401,7 @@ write.csv(cor.value1,file = "DataOutputJSD/corValue1.csv") #模型变量概况�
 kappa(cor.value1, exact=TRUE)
 vif(model1)
 
-##################################################### 五、评分卡转换 ######################################################
+##################################################### V. Scorecard Transformation ######################################################
 #2个假定：（1）在某个特定的比率设定特定的逾期分值（这里{1:60}时分值为600）；
 #         （2）指定比率翻番的分数（PDO)(这里为20)
 #Score = A - B*log(Odds),其中Odds为违约比正常
@@ -1422,7 +1422,7 @@ credit.test.score<-cbind(credit.test.temp,credit.test.after)
 write.csv(credit.train.score,file = "DataOutputJSD/credit.train.score.csv") 
 write.csv(credit.test.score,file = "DataOutputJSD/credit.test.score.csv") 
 
-######################################################### 六、模型评价#########################################################
+######################################################### VI. Model Evaluation #########################################################
 #6.1训练集的模型评价
 #训练集 K-S表
 nrow(credit.train.after)/10 #520
@@ -1476,7 +1476,7 @@ lines(depth.test1,fpr.test1,type='l',col="red",lwd =2  )
 kslable.test1<-paste("KS统计量:",max(ks.test1),sep="");max(ks.test1)
 legend(0.3,0.2,c(kslable.test1),2:8)
 
-###################################################### 七、稳定性检验 #######################################################
+###################################################### VII. Stability Test #######################################################
 #没有测试街和验证集稳定性略过............
 #7.1 稳定性检验
 table(credit.train.after$score1)
